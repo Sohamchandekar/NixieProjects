@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nixie</title>
+    <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+    <div class="nixielogo">
+        <img src="static/logo.png">
+    </div>
+
+    <div class="page-tabs">
+        <a href="{{ url_for('admin_page') }}">Admin Centre</a>
+        <a href="#"> Help</a>
+    </div>
+
+    <div class="common-prompts" style="display:none;">
+        <p>What you looking for ?</p>
+        <div class="prompt" onclick="updateInput('user id and password for')">user id and password</div>
+        <div class="prompt" onclick="updateInput('password for')">Just looking for password?</div>
+        <div class="prompt" onclick="updateInput('user id for')">Maybe Just the user id ??</div>
+        <div class="prompt" onclick="updateInput('email id for')">Need Email id ??</div>
+        <div class="prompt" onclick="updateInput('contact for')">Looking for the phone number ?</div>
+        <hr>
+        <p> Shortcut Prompts!</p>
+        <div class="prompt" onclick="updateInput('login for')">rera login?</div>
+    </div>
+
+    <div class="user-name-input">
+        <form id="userNameForm" method="post">
+            <label for="user_name"> </label>
+            <input type="text" id="user_name" name="user_name" required placeholder="Your Secret id">
+            <button type="submit" id="chatbutton">Start Chat</button>
+        </form>
+    </div>
+
+    <div class="central-container" style="display:none;">
+        <div class="chat-container">
+            <div id="chatBox" class="chat-box"></div>
+            <form id="chatForm" class="input-form">
+                <input type="text" id="query" placeholder="Type your message..." autocomplete="off" required>
+                <div id="suggestions"></div>
+                <button type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Define updateInput function in the global scope
+        function updateInput(promptText) {
+            document.getElementById('query').value = promptText;
+            // Close suggestions dropdown after selecting a prompt
+            document.getElementById('suggestions').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const userNameForm = document.getElementById('userNameForm');
+            const centralContainer = document.querySelector('.central-container');
+            const chatContainer = document.querySelector('.chat-container');
+            const commonPrompts = document.querySelector('.common-prompts');
+            let userName = '';
+            let projectNameStarted = false;
+
+            userNameForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                userName = document.getElementById('user_name').value.trim();
+                if (userName !== '') {
+                    document.querySelector('.user-name-input').style.display = 'none';
+                    centralContainer.style.display = 'flex'; // Show central container
+                    chatContainer.style.display = 'block'; // Show chat container
+                    commonPrompts.style.display = 'block'; // Show common prompts div
+                }
+            });
+
+            const chatBox = document.getElementById('chatBox');
+            const chatForm = document.getElementById('chatForm');
+            const suggestionsDiv = document.getElementById('suggestions');
+
+            // Set initial display of suggestions dropdown to "none"
+            suggestionsDiv.style.display = 'none';
+
+            chatForm.addEventListener('input', function (event) {
+                const inputText = event.target.value.trim();
+                if (/of\s|for\s/i.test(inputText) || projectNameStarted) {
+                    projectNameStarted = true;
+                    const words = inputText.split(/\s+/);
+                    const lastWord = words[words.length - 1];
+                    if (lastWord.length >= 3) {
+                        getSuggestions(lastWord);
+                    } else {
+                        suggestionsDiv.style.display = 'none';
+                    }
+                } else {
+                    projectNameStarted = false;
+                    suggestionsDiv.style.display = 'none';
+                }
+            });
+
+            function getSuggestions(inputText) {
+                fetch('/get_matching_projects?input=' + inputText, {
+                    method: 'GET'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.length > 0) {
+                        const topSuggestions = getTopSuggestions(data, 4); // Get top 4 suggestions
+                        displaySuggestions(topSuggestions);
+                    } else {
+                        suggestionsDiv.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+            function getTopSuggestions(suggestions, count) {
+                // Sort suggestions based on relevance or any other criteria
+                return suggestions.slice(0, count); // Return top 'count' suggestions
+            }
+
+            function displaySuggestions(projects) {
+                suggestionsDiv.innerHTML = '';
+                const dropdown = "<ul>" + projects.map(project => "<li>" + project + "</li>").join("") + "</ul>";
+                suggestionsDiv.innerHTML = dropdown;
+                suggestionsDiv.style.display = 'block'; // Show suggestions dropdown
+            }
+
+            // Add click event listener to suggestions
+            suggestionsDiv.addEventListener('click', function (event) {
+                const clickedSuggestion = event.target.textContent;
+                const queryInput = document.getElementById('query');
+                const inputText = queryInput.value.trim();
+                const words = inputText.split(/\s+/);
+                words[words.length - 1] = clickedSuggestion; // Replace last incomplete word
+                queryInput.value = words.join(' ');
+                queryInput.focus(); // Focus back on the input field
+                suggestionsDiv.style.display = 'none'; // Hide suggestions dropdown after selection
+            });
+
+            chatForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const queryInput = document.getElementById('query');
+                const query = queryInput.value.trim();
+                if (query !== '') {
+                    appendUserMessage(query);
+                    queryInput.value = '';
+                    sendQueryToServer(query);
+                }
+                suggestionsDiv.style.display = 'none'; // Clear suggestions on form submit
+            });
+
+            function appendUserMessage(message) {
+                const userMessageElement = document.createElement('div');
+                userMessageElement.classList.add('message', 'user-message');
+                userMessageElement.textContent = message;
+                chatBox.appendChild(userMessageElement);
+            }
+
+            function appendGPT2Message(message) {
+                const gpt2MessageElement = document.createElement('div');
+                gpt2MessageElement.classList.add('message', 'gpt2-message');
+                gpt2MessageElement.textContent = message;
+                chatBox.appendChild(gpt2MessageElement);
+            }
+
+            function sendQueryToServer(query) {
+                fetch('/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_name: userName,
+                        query: query
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        appendGPT2Message(data.error);
+                    } else if (data.length > 0) {
+                        const queryResult = data[0];
+                        let resultText = '';
+                        for (const key in queryResult) {
+                            if (queryResult.hasOwnProperty(key)) {
+                                resultText += `${key}: ${queryResult[key]}\n`;
+                            }
+                        }
+                        appendGPT2Message(resultText);
+                    } else {
+                        console.error('Unexpected response format:', data);
+                        appendGPT2Message("Sorry, an unexpected error occurred. Please try again later.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    appendGPT2Message("Sorry, an error occurred. Please try again later.");
+                });
+            }
+        });
+    </script>
+</body>
+
+<footer class="developer-credit">
+    <p>_soham 😎 </p>
+</footer>
+
+</html>

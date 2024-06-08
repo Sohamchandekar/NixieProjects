@@ -1,0 +1,107 @@
+<!--<!DOCTYPE html>-->
+<!--<html lang="en">-->
+<!--<head>-->
+<!--    <meta charset="UTF-8">-->
+<!--    <meta name="viewport" content="width=device-width, initial-scale=1.0">-->
+<!--    <title>Nixie</title>-->
+<!--    <link rel="stylesheet" href="static/styles_admin.css">-->
+<!--</head>-->
+<!--<body>-->
+<!--    <div class="user-name-input">-->
+<!--        <form id="userNameForm" method="post">-->
+<!--            <label for="user_name"> </label>-->
+<!--            <input type="text" id="user_name" name="user_name" required placeholder="Your Admin id">-->
+<!--            <button type="submit" id="chatbutton">Login</button>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--    {% if allow_upload %}-->
+<!--    <div class="file-uploader">-->
+<!--        <form id="fileUploadForm" enctype="multipart/form-data">-->
+<!--            <input type="file" id="file" name="file" accept=".csv, .xlsx">-->
+<!--            <input type="hidden" id="username" name="user_name" value="{{ user_id }}">-->
+<!--            <button type="button" id="uploadButton">Upload</button>-->
+<!--        </form>-->
+<!--    </div>-->
+<!--    <div id="message"></div>-->
+
+<!--    <script>-->
+<!--        document.getElementById('uploadButton').addEventListener('click', function () {-->
+<!--            var form = document.getElementById('fileUploadForm');-->
+<!--            var formData = new FormData(form);-->
+<!--            var xhr = new XMLHttpRequest();-->
+<!--            xhr.open('POST', '/upload');-->
+<!--            xhr.onload = function () {-->
+<!--                if (xhr.status === 200) {-->
+<!--                    var response = JSON.parse(xhr.responseText);-->
+<!--                    if (response.success) {-->
+<!--                        document.getElementById('message').innerHTML = '<p style="color: green;">' + response.success + '</p>';-->
+<!--                    } else {-->
+<!--                        document.getElementById('message').innerHTML = '<p style="color: red;">' + response.error + '</p>';-->
+<!--                    }-->
+<!--                }-->
+<!--            };-->
+<!--            xhr.send(formData);-->
+<!--        });-->
+<!--    </script>-->
+<!--    {% endif %}-->
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nixie</title>
+    <link rel="stylesheet" href="static/styles_admin.css">
+</head>
+<body>
+    <div class="user-name-input" id="user-name-input">
+        <form id="userNameForm" method="post">
+            <label for="user_name"> </label>
+            <input type="text" id="user_name" name="user_name" required placeholder="Your Admin id">
+            <button type="submit" id="chatbutton">Login</button>
+        </form>
+    </div>
+    {% if allow_upload %}
+    <div class="file-uploader" id="file-uploader" style="display: none;">
+        <form id="fileUploadForm" enctype="multipart/form-data">
+            <input type="file" id="file" name="file" accept=".csv, .xlsx">
+            <input type="hidden" id="username" name="user_name" value="{{ user_id }}">
+            <button type="button" id="uploadButton">Upload</button>
+        </form>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('userNameForm').addEventListener('submit', function (event) {
+            event.preventDefault(); // Prevent form submission
+
+            // Your existing code to handle login goes here
+
+            // Hide user-name-input div and show file-uploader div
+            document.getElementById('user-name-input').style.display = 'none';
+            document.getElementById('file-uploader').style.display = 'block';
+        });
+
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            var form = document.getElementById('fileUploadForm');
+            var formData = new FormData(form);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload');
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        document.getElementById('message').innerHTML = '<p style="color: green;">' + response.success + '</p>';
+                    } else {
+                        document.getElementById('message').innerHTML = '<p style="color: red;">' + response.error + '</p>';
+                    }
+                }
+            };
+            xhr.send(formData);
+        });
+    </script>
+    {% endif %}
+</body>
+</html>
