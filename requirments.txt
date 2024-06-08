@@ -53,3 +53,4 @@ tzdata==2024.1
 urllib3==2.2.1
 Werkzeug==3.0.3
 wsproto==1.2.0
+Guricorn
