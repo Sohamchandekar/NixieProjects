@@ -8,58 +8,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
-from transformers import pipeline
 import pandas as pd
-from transformers import BlenderbotTokenizer, BlenderbotForConditionalGeneration
+
 
 app = Flask(__name__)
 
-# Load model and tokenizer once
-tokenizer = BlenderbotTokenizer.from_pretrained("facebook/blenderbot-400M-distill")
-model = BlenderbotForConditionalGeneration.from_pretrained("facebook/blenderbot-400M-distill")
-
-def generate_ai_response(
-    query,
-    max_length=50,
-    min_length=10,
-    do_sample=True,
-    early_stopping=True,
-    num_beams=2,  # Reduced from 3 to 2
-    temperature=0.7,
-    top_k=30,  # Reduced from 50 to 30
-    top_p=0.8,  # Reduced from 0.9 to 0.8
-    repetition_penalty=1.0,
-    length_penalty=1.0,
-    no_repeat_ngram_size=2,
-    num_return_sequences=1
-):
-    # Tokenize the input
-    inputs = tokenizer(query, return_tensors="pt")
-
-    # Generate a response with specified parameters
-    reply_ids = model.generate(
-        inputs['input_ids'],
-        max_length=max_length,
-        min_length=min_length,
-        do_sample=do_sample,
-        early_stopping=early_stopping,
-        num_beams=num_beams,
-        temperature=temperature,
-        top_k=top_k,
-        top_p=top_p,
-        repetition_penalty=repetition_penalty,
-        length_penalty=length_penalty,
-        no_repeat_ngram_size=no_repeat_ngram_size,
-        num_return_sequences=num_return_sequences,
-        pad_token_id=tokenizer.pad_token_id,
-        eos_token_id=tokenizer.eos_token_id
-    )
-
-    # Decode the response
-    response = tokenizer.decode(reply_ids[0], skip_special_tokens=True)
-
-    return response
 
 def load_projects():
     json_file = "ProjectsCheckData.json"
@@ -74,15 +27,6 @@ def load_projects():
         return None
 
 projects = load_projects()
-
-# @app.route('/get_matching_projects', methods=['GET'])
-# def get_matching_projects():
-#     input_text = request.args.get('input', '')
-#     if projects:
-#         matching_projects = [project for project in projects if input_text.lower() in project.lower()]
-#         return jsonify(matching_projects)
-#     else:
-#         return jsonify([])
 
 @app.route('/get_matching_projects', methods=['GET'])
 def get_matching_projects():
@@ -124,19 +68,13 @@ def check_basic_access(user_name):
         return user_name.strip() in access_set
     return False
 
-# Load the text generation pipeline with the Meta-Llama-3-8B model
-text_generator = pipeline("text-generation", model="gpt2")
-
-def generate_response(query):
-    response = text_generator(query, max_length=50, num_return_sequences=1)
-    return response[0]["generated_text"]
 def process_query(query, user_name):
     query = query.lower().strip()
     info_requested, project_name = extract_info_and_project(query)
 
     if not project_name:
         # If the project name is not found, use the language model to generate a response
-        return [{"response": generate_ai_response(query)}]
+        return [{"response": "sorry i am unable to understand you"}]
 
     if not check_access(user_name, project_name):
         return [{"error": "Access denied. You do not have permission to access this project information."}]
@@ -514,3 +452,5 @@ def json_generator(input_file):
         json.dump(json_data, json_file, indent=4)
 
 
+if __name__ == '__main__':
+    app.run(debug=True)
