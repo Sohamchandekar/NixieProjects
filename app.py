@@ -4,12 +4,12 @@ import json
 from fuzzywuzzy import process
 import re
 import pandas as pd
-import os
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 app = Flask(__name__)
 
@@ -338,31 +338,20 @@ def check_access(user_name, project_name):
     print(f"access list: {access_list}")
 
     return user_name in access_list
-    
-import os
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 def login_to_maharerait(user_id, password):
-    # Initialize the WebDriver options
-    edge_options = webdriver.EdgeOptions()
-    edge_options.add_argument("--start-maximized")  # Open browser in full screen
-
-    # Define the path to Edge WebDriver
-    chromedriver_path = os.path.join('static', 'drivers', 'msedgedriver.exe')
-
-    # Ensure the file has executable permissions (only necessary for Unix-based systems)
-    os.chmod(chromedriver_path, 0o755)
-
-    # Initialize the service object with the path to Edge WebDriver
-    service = Service(executable_path=chromedriver_path)
-
-    # Initialize the Edge driver with the service object and options
-    driver = webdriver.Edge(service=service, options=edge_options)
     try:
+        # Initialize the ChromeOptions
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--start-maximized")  # Open browser in full screen
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option("useAutomationExtension", False)
+
+        # Automatically download and use the correct version of Chromedriver
+        driver_path = ChromeDriverManager().install()
+        service = Service(driver_path)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+
         # Navigate to the login page
         driver.get("https://maharerait.mahaonline.gov.in/")
 
@@ -392,6 +381,7 @@ def login_to_maharerait(user_id, password):
     finally:
         # Do not close the browser, leaving control to the user
         pass
+
 # Route for admin page and authentication
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_page():
