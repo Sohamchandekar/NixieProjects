@@ -334,15 +334,24 @@ def extract_project_name(query):
 
 def check_access(user_name, project_name):
     user_name = user_name.strip()
-    project_info = projects[project_name]
+    project_info = projects.get(project_name)  # Use .get() to safely get project_info, which may be None
 
-    access_list = [admin.strip() for admin in project_info['admin_access'].split(',')] + \
-                  [general.strip() for general in project_info['general_access'].split(',')]
+    if project_info is not None:  # Check if project_info is not None
+        access_list = []
+        admin_access = project_info.get('admin_access')
+        if admin_access:
+            access_list.extend([admin.strip() for admin in admin_access.split(',')])
 
-    print(f"user_name requested: {user_name}")
-    print(f"access list: {access_list}")
+        general_access = project_info.get('general_access')
+        if general_access:
+            access_list.extend([general.strip() for general in general_access.split(',')])
 
-    return user_name in access_list
+        print(f"user_name requested: {user_name}")
+        print(f"access list: {access_list}")
+
+        return user_name in access_list
+
+    return False  # Return False if project_info is None
 
 def login_to_maharerait(user_id, password):
     try:
