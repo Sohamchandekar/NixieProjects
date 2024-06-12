@@ -3,16 +3,15 @@ from flask import redirect, url_for
 import json
 from fuzzywuzzy import process
 import re
+import pandas as pd
+import os
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import pandas as pd
-
+from selenium.webdriver.chrome.service import Service
 
 app = Flask(__name__)
-
 
 def load_projects():
     json_file = "ProjectsCheckData.json"
@@ -339,15 +338,21 @@ def check_access(user_name, project_name):
     print(f"access list: {access_list}")
 
     return user_name in access_list
-
 def login_to_maharerait(user_id, password):
     # Initialize the WebDriver
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--start-maximized")  # Open browser in full screen
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
+    edge_options = webdriver.EdgeOptions()
+    edge_options.add_argument("--start-maximized")  # Open browser in full screen
+    edge_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    edge_options.add_experimental_option("useAutomationExtension", False)
 
-    driver = webdriver.Chrome(options=chrome_options)
+    # Define the path to Edge WebDriver
+    edgedriver_path = os.path.join('static', 'drivers', 'msedgedriver.exe')
+
+    # Initialize the service object with the path to Edge WebDriver
+    service = Service(edgedriver_path)
+
+    # Initialize the Edge driver with the service object and options
+    driver = webdriver.Edge(service=service, options=edge_options)
     try:
         # Navigate to the login page
         driver.get("https://maharerait.mahaonline.gov.in/")
