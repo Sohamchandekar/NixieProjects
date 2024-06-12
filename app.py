@@ -61,8 +61,13 @@ def check_basic_access(user_name):
     if user_name and projects:
         access_set = set()
         for project in projects.values():
-            access_set.update([admin.strip() for admin in project['admin_access'].split(",")])
-            access_set.update([general.strip() for general in project['general_access'].split(",")])
+            admin_access = project.get('admin_access', '')  # Get admin_access field with default empty string
+            general_access = project.get('general_access', '')  # Get general_access field with default empty string
+            # Split admin_access and general_access only if they are not empty
+            if admin_access:
+                access_set.update([admin.strip() for admin in admin_access.split(",")])
+            if general_access:
+                access_set.update([general.strip() for general in general_access.split(",")])
 
         return user_name.strip() in access_set
     return False
