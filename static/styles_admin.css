@@ -1,0 +1,66 @@
+body {
+    font-family: 'Roboto Mono', monospace;
+    background-image: url("background1.png");
+    background-size: cover;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden; /* Prevent scrolling of the entire body */
+}
+
+.nixielogo {
+    position: absolute;  /* Position it absolutely */
+    top: 0;              /* Align it to the top of the screen */
+    right: 0;             /* Align it to the left of the screen */
+}
+
+.nixielogo img {
+    width: 130px;        /* Set the width of the image */
+    height: 130px;       /* Set the height of the image */
+}
+
+.user-name-input {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Center vertically in full viewport height */
+}
+
+#userNameForm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: transparent;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4); /* Light shadow */
+}
+
+#user_name {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    font-size: 16px;
+}
+
+#chatbutton {
+    width: 80%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#chatbutton:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
