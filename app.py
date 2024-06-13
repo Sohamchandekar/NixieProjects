@@ -4,14 +4,7 @@ import json
 from fuzzywuzzy import process
 import re
 import pandas as pd
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import os
+
 
 app = Flask(__name__)
 def load_projects():
@@ -334,58 +327,38 @@ def check_access(user_name, project_name):
     print(f"access list: {access_list}")
 
     return user_name in access_list
-from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-import os
+from playwright.sync_api import sync_playwright
+import time
 
 def login_to_maharerait(user_id, password):
-    # Use webdriver-manager to get the path to the msedgedriver executable
-    edgedriver_path = EdgeChromiumDriverManager().install()
+    with sync_playwright() as p:
+        # Launch a headless browser instance
+        browser = p.chromium.launch(headless=False)  # Set headless=True if you want it to run in the background
+        page = browser.new_page()
 
-    # Initialize the WebDriver service
-    service = Service(edgedriver_path)
+        try:
+            # Navigate to the login page
+            page.goto("https://maharerait.mahaonline.gov.in/")
 
-    # Initialize the WebDriver with the specified service
-    edge_options = webdriver.EdgeOptions()
-    edge_options.add_argument("--start-maximized")  # Open browser in full screen
-    edge_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    edge_options.add_experimental_option("useAutomationExtension", False)
+            # Wait for the username field and enter the user ID
+            page.fill('input[id="UserName"]', user_id)
 
-    driver = webdriver.Edge(service=service, options=edge_options)
-    try:
-        # Navigate to the login page
-        driver.get("https://maharerait.mahaonline.gov.in/")
+            # Wait for the password field and enter the password
+            page.fill('input[id="Password"]', password)
 
-        # Explicitly wait for the username field to be present and visible
-        username_field = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="UserName"]'))
-        )
-        username_field.send_keys(user_id)
+            # Inform the user to complete the CAPTCHA and login manually
+            print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
 
-        # Explicitly wait for the password field to be present and visible
-        password_field = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="Password"]'))
-        )
-        password_field.send_keys(password)
+            # Keep the browser open to allow manual CAPTCHA solving
+            time.sleep(600)  # Wait for 10 minutes
 
-        # After entering the user ID and password, leave control of the window to the user
-        print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-        # Wait indefinitely to keep the browser open
-        WebDriverWait(driver, 600).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="non_existent_element"]'))
-        )
+        finally:
+            # Do not close the browser, leaving control to the user
+            pass
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-
-    finally:
-        # Do not close the browser, leaving control to the user
-        pass
 # Route for admin page and authentication
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_page():
@@ -456,4 +429,3 @@ def json_generator(input_file):
     # Save JSON data to a file
     with open('ProjectsCheckData.json', 'w') as json_file:
         json.dump(json_data, json_file, indent=4)
-
