@@ -4,9 +4,15 @@ import json
 from fuzzywuzzy import process
 import re
 import pandas as pd
+import subprocess
+import os
 
 
 app = Flask(__name__)
+
+# Run playwright install to ensure browsers are installed
+subprocess.run(["playwright", "install"], check=True)
+
 def load_projects():
     json_file = "ProjectsCheckData.json"
     try:
