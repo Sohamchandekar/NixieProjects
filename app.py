@@ -6,13 +6,14 @@ import re
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+import os
 
 app = Flask(__name__)
-
 def load_projects():
     json_file = "ProjectsCheckData.json"
     try:
@@ -56,22 +57,15 @@ def index():
 
         return jsonify(query_result)
     return render_template('index.html')
-
 def check_basic_access(user_name):
     if user_name and projects:
         access_set = set()
         for project in projects.values():
-            admin_access = project.get('admin_access', '')  # Get admin_access field with default empty string
-            general_access = project.get('general_access', '')  # Get general_access field with default empty string
-            # Split admin_access and general_access only if they are not empty
-            if admin_access:
-                access_set.update([admin.strip() for admin in admin_access.split(",")])
-            if general_access:
-                access_set.update([general.strip() for general in general_access.split(",")])
+            access_set.update([admin.strip() for admin in project['admin_access'].split(",")])
+            access_set.update([general.strip() for general in project['general_access'].split(",")])
 
         return user_name.strip() in access_set
     return False
-
 def process_query(query, user_name):
     query = query.lower().strip()
     info_requested, project_name = extract_info_and_project(query)
@@ -113,7 +107,6 @@ def process_query(query, user_name):
     print(f"machine response: {response}")
 
     return [response] if response else [{"error": "Query does not specify a valid request for user ID and/or password."}]
-
 def extract_info_and_project(query):
     user_id_password_patterns = [
         r"user id and password for (.+)",r"password and user id for (.+)",r"passcode and user of (.+)",
@@ -324,48 +317,38 @@ def extract_info_and_project(query):
         if project_name:
             return info_requested, project_name
     return None, None
-
 def extract_project_name(query):
     project_names = list(projects.keys())
     closest_match, confidence = process.extractOne(query, project_names)
     if confidence > 70:
         return closest_match
     return None
-
 def check_access(user_name, project_name):
     user_name = user_name.strip()
-    project_info = projects.get(project_name)  # Use .get() to safely get project_info, which may be None
+    project_info = projects[project_name]
 
-    if project_info is not None:  # Check if project_info is not None
-        access_list = []
-        admin_access = project_info.get('admin_access')
-        if admin_access:
-            access_list.extend([admin.strip() for admin in admin_access.split(',')])
+    access_list = [admin.strip() for admin in project_info['admin_access'].split(',')] + \
+                  [general.strip() for general in project_info['general_access'].split(',')]
 
-        general_access = project_info.get('general_access')
-        if general_access:
-            access_list.extend([general.strip() for general in general_access.split(',')])
+    print(f"user_name requested: {user_name}")
+    print(f"access list: {access_list}")
 
-        print(f"user_name requested: {user_name}")
-        print(f"access list: {access_list}")
-
-        return user_name in access_list
-
-    return False  # Return False if project_info is None
-
+    return user_name in access_list
 def login_to_maharerait(user_id, password):
+    # Path to the msedgedriver executable
+    edgedriver_path = os.path.join(os.path.dirname(__file__), 'msedgedriver.exe')
+
+    # Initialize the WebDriver service
+    service = Service(edgedriver_path)
+
+    # Initialize the WebDriver with the specified service
+    edge_options = webdriver.EdgeOptions()
+    edge_options.add_argument("--start-maximized")  # Open browser in full screen
+    edge_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    edge_options.add_experimental_option("useAutomationExtension", False)
+
+    driver = webdriver.Edge(service=service, options=edge_options)
     try:
-        # Initialize the ChromeOptions
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--start-maximized")  # Open browser in full screen
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option("useAutomationExtension", False)
-
-        # Automatically download and use the correct version of Chromedriver
-        driver_path = ChromeDriverManager().install()
-        service = Service(driver_path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-
         # Navigate to the login page
         driver.get("https://maharerait.mahaonline.gov.in/")
 
@@ -385,7 +368,7 @@ def login_to_maharerait(user_id, password):
         print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
 
         # Wait indefinitely to keep the browser open
-        WebDriverWait(driver, 6000).until(
+        WebDriverWait(driver, 600).until(
             EC.presence_of_element_located((By.XPATH, '//*[@id="non_existent_element"]'))
         )
 
@@ -395,7 +378,6 @@ def login_to_maharerait(user_id, password):
     finally:
         # Do not close the browser, leaving control to the user
         pass
-
 # Route for admin page and authentication
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_page():
@@ -439,7 +421,6 @@ def check_admin_access(user_id):
             if user_id.lower() in admin_access:
                 return True
     return False
-
 def json_generator(input_file):
     # Read the Excel sheet
     if input_file.endswith('.csv'):
