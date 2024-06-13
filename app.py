@@ -334,9 +334,17 @@ def check_access(user_name, project_name):
     print(f"access list: {access_list}")
 
     return user_name in access_list
+from selenium import webdriver
+from selenium.webdriver.edge.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+import os
+
 def login_to_maharerait(user_id, password):
-    # Path to the msedgedriver executable
-    edgedriver_path = os.path.join(os.path.dirname(__file__), 'msedgedriver.exe')
+    # Use webdriver-manager to get the path to the msedgedriver executable
+    edgedriver_path = EdgeChromiumDriverManager().install()
 
     # Initialize the WebDriver service
     service = Service(edgedriver_path)
