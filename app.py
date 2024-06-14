@@ -444,6 +444,4 @@ def json_generator(input_file):
     with open('ProjectsCheckData.json', 'w') as json_file:
         json.dump(json_data, json_file, indent=4)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
 
