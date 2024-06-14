@@ -1,16 +1,23 @@
 services:
   - type: web
-    name: selenium-app
+    name: nixie-app
     env: python
+    runtime: python
+    plan: free
     buildCommand: |
-      apt-get update && \
-      apt-get install -y wget unzip xvfb libxi6 libgconf-2-4 x11vnc && \
-      wget -q -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip && \
-      unzip /tmp/chromedriver.zip -d /usr/local/bin/ && \
-      wget -q -O /tmp/google-chrome-stable.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-      apt-get install -y /tmp/google-chrome-stable.deb && \
       pip install -r requirements.txt
-    startCommand: |
-      Xvfb :99 -screen 0 1920x1080x24 & \
-      x11vnc -display :99 -nopw -listen localhost -xkb & \
-      export DISPLAY=:99 && gunicorn app:app --timeout 200
+      apt-get update
+      apt-get install -y unzip xvfb libxi6 libgconf-2-4
+      wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+      echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list
+      apt-get update
+      apt-get install -y google-chrome-stable
+      wget -N https://chromedriver.storage.googleapis.com/2.41/chromedriver_linux64.zip
+      unzip chromedriver_linux64.zip -d /usr/local/bin
+      chmod +x /usr/local/bin/chromedriver
+    startCommand: python app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHONUNBUFFERED
+        value: 'true'
