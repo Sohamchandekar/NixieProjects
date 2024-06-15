@@ -5,10 +5,10 @@ services:
     runtime: python
     plan: free
     buildCommand: |
-      pip install -r requirements.txt
       apt-get update
       apt-get install -y unzip xvfb libxi6 libgconf-2-4
-      playwright install
+      pip install -r requirements.txt
+      playwright install chromium  # Ensuring Chromium is installed
     startCommand: python app.py
     envVars:
       - key: FLASK_ENV
