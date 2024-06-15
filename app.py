@@ -1,17 +1,12 @@
 from flask import Flask, request, jsonify, render_template
-from flask import redirect, url_for
 import json
 from fuzzywuzzy import process
 import re
 import pandas as pd
 from flask import Flask, request, jsonify
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import os
-
-
+from playwright.sync_api import sync_playwright
+import time
 
 app = Flask(__name__)
 def load_projects():
@@ -334,37 +329,42 @@ def check_access(user_name, project_name):
     print(f"access list: {access_list}")
 
     return user_name in access_list
+    
 from playwright.sync_api import sync_playwright
 import time
 
 def login_to_maharerait(user_id, password):
-    with sync_playwright() as p:
-        # Launch a headless browser instance
-        browser = p.chromium.launch(headless=False)  # Set headless=True for background operation
-        page = browser.new_page()
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=False)  # Ensure headless is set to False
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto('https://maharerait.mahaonline.gov.in/login/login')
+            
+            # Debug log for page navigation
+            print("Navigated to Maharerait login page")
 
-        try:
-            # Navigate to the login page
-            page.goto("https://maharerait.mahaonline.gov.in/")
+            page.fill('input[name="UserID"]', user_id)
+            page.fill('input[name="Password"]', password)
+            
+            # Debug log for filling credentials
+            print(f"Filled UserID: {user_id} and Password: {'*' * len(password)}")
 
-            # Wait for the username field and enter the user ID
-            page.fill('input[id="UserName"]', user_id)
-
-            # Wait for the password field and enter the password
-            page.fill('input[id="Password"]', password)
-
-            # Inform the user to complete the CAPTCHA and login manually
-            print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
-
-            # Keep the browser open to allow manual CAPTCHA solving
-            time.sleep(600)  # Wait for 10 minutes
-
-        except Exception as e:
-            print(f"An error occurred: {e}")
-
-        finally:
-            # Do not close the browser, leaving control to the user
-            pass
+            page.click('button[type="submit"]')
+            
+            # Wait for navigation after login
+            page.wait_for_navigation()
+            
+            # Check if login was successful by looking for a specific element that appears post-login
+            if page.query_selector('selector_for_successful_login'):  # Replace with actual selector
+                browser.close()
+                return "Login successful"
+            else:
+                browser.close()
+                return "Login failed"
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        return f"Login failed due to an error: {str(e)}"
 
 
 # Route for admin page and authentication
