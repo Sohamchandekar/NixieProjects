@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify
 import os
 from playwright.sync_api import sync_playwright
 import time
+import subprocess
 
 app = Flask(__name__)
 def load_projects():
