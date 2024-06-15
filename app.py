@@ -338,39 +338,33 @@ from playwright.sync_api import sync_playwright
 import time
 
 def login_to_maharerait(user_id, password):
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--start-maximized")  # Open browser in full screen
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--remote-debugging-port=9222")  # Enable remote debugging
-    chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    chrome_options.add_experimental_option("useAutomationExtension", False)
+    with sync_playwright() as p:
+        # Launch a headless browser instance
+        browser = p.chromium.launch(headless=False)  # Set headless=True for background operation
+        page = browser.new_page()
 
-    driver = webdriver.Chrome(options=chrome_options)
-    
-    try:
-        driver.get("https://maharerait.mahaonline.gov.in/")
-        username_field = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="UserName"]'))
-        )
-        username_field.send_keys(user_id)
+        try:
+            # Navigate to the login page
+            page.goto("https://maharerait.mahaonline.gov.in/")
 
-        password_field = WebDriverWait(driver, 20).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="Password"]'))
-        )
-        password_field.send_keys(password)
+            # Wait for the username field and enter the user ID
+            page.fill('input[id="UserName"]', user_id)
 
-        print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
-        WebDriverWait(driver, 600).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="non_existent_element"]'))
-        )
+            # Wait for the password field and enter the password
+            page.fill('input[id="Password"]', password)
 
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+            # Inform the user to complete the CAPTCHA and login manually
+            print("User ID and Password entered. Please complete the CAPTCHA and login manually.")
 
-    finally:
-        pass
+            # Keep the browser open to allow manual CAPTCHA solving
+            time.sleep(600)  # Wait for 10 minutes
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+        finally:
+            # Do not close the browser, leaving control to the user
+            pass
 
 
 # Route for admin page and authentication
