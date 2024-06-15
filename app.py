@@ -335,26 +335,29 @@ import time
 
 def login_to_maharerait(user_id, password):
     try:
+        # Ensure Playwright browsers are installed before running the browser
+        subprocess.run(["playwright", "install", "chromium"], check=True)
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=False)  # Ensure headless is set to False
             context = browser.new_context()
             page = context.new_page()
             page.goto('https://maharerait.mahaonline.gov.in/login/login')
-            
+
             # Debug log for page navigation
             print("Navigated to Maharerait login page")
 
             page.fill('input[name="UserID"]', user_id)
             page.fill('input[name="Password"]', password)
-            
+
             # Debug log for filling credentials
             print(f"Filled UserID: {user_id} and Password: {'*' * len(password)}")
 
             page.click('button[type="submit"]')
-            
+
             # Wait for navigation after login
             page.wait_for_navigation()
-            
+
             # Check if login was successful by looking for a specific element that appears post-login
             if page.query_selector('selector_for_successful_login'):  # Replace with actual selector
                 browser.close()
@@ -365,7 +368,6 @@ def login_to_maharerait(user_id, password):
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return f"Login failed due to an error: {str(e)}"
-
 
 # Route for admin page and authentication
 @app.route('/admin', methods=['GET', 'POST'])
