@@ -340,7 +340,7 @@ def login_to_maharerait(user_id, password):
         subprocess.run(["playwright", "install", "chromium"], check=True)
 
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)  # Ensure headless is set to False
+            browser = p.chromium.launch(headless=True)  # Ensure headless is set to False
             context = browser.new_context()
             page = context.new_page()
             page.goto('https://maharerait.mahaonline.gov.in/login/login')
